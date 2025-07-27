@@ -32,14 +32,15 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Appointment Service image
-        working-directory: appointment-service
+      - name: Build Appointment Service
+        working-directory: ./appointment-service
         run: |
           docker build -t $ECR_APPOINTMENT_REPO:latest .
           docker push $ECR_APPOINTMENT_REPO:latest
 
+
       - name: Build and push Patient Service image
-        working-directory: patient-service
+        working-directory: ./patient-service
         run: |
           docker build -t $ECR_PATIENT_REPO:latest .
           docker push $ECR_PATIENT_REPO:latest
