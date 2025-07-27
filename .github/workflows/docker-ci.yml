@@ -32,6 +32,14 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Create ECR repositories if they don't exist
+        run: |
+             aws ecr describe-repositories --repository-names appointment-service \
+             || aws ecr create-repository --repository-name appointment-service
+
+             aws ecr describe-repositories --repository-names patient-service \
+             || aws ecr create-repository --repository-name patient-service
+
       - name: Build Appointment Service
         working-directory: application/appointment-service
         run: |
