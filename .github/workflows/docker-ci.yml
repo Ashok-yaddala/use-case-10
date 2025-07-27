@@ -1,0 +1,42 @@
+name: Build and Push Docker Images to ECR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'appointment-service/**'
+      - 'patient-service/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-south-1
+      ECR_APPOINTMENT_REPO: 173003893026.dkr.ecr.ap-south-1.amazonaws.com/appointment-service
+      ECR_PATIENT_REPO: 173003893026.dkr.ecr.ap-south-1.amazonaws.com/patient-service
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::173003893026:role/OIDC-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Appointment Service image
+        working-directory: appointment-service
+        run: |
+          docker build -t $ECR_APPOINTMENT_REPO:latest .
+          docker push $ECR_APPOINTMENT_REPO:latest
+
+      - name: Build and push Patient Service image
+        working-directory: patient-service
+        run: |
+          docker build -t $ECR_PATIENT_REPO:latest .
+          docker push $ECR_PATIENT_REPO:latest
