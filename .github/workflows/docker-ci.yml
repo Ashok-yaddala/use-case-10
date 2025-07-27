@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ap-south-1
-      ECR_APPOINTMENT_REPO: 173003893026.dkr.ecr.ap-south-1.amazonaws.com/appointment-service
-      ECR_PATIENT_REPO: 173003893026.dkr.ecr.ap-south-1.amazonaws.com/patient-service
+      ECR_APPOINTMENT_REPO: 136102212278.dkr.ecr.ap-south-1.amazonaws.com/appointment-service
+      ECR_PATIENT_REPO: 136102212278.dkr.ecr.ap-south-1.amazonaws.com/patient-service
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
