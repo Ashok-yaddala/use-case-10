@@ -131,37 +131,48 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Ensure ECS Cluster Exists
-        run: |
-          aws ecs describe-clusters --clusters ${{ env.ECS_CLUSTER_NAME }} || \
-          aws ecs create-cluster --cluster-name ${{ env.ECS_CLUSTER_NAME }}
-
-      - name: Update Patient Service
+      - name: Update Patient Service (if exists)
         if: needs.build-patient-service.result == 'success'
         run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER_NAME }} \
-            --service healthcare-app-dev-patient-service \
-            --force-new-deployment
+          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-patient-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
+            aws ecs update-service \
+              --cluster healthcare-app-dev-cluster \
+              --service healthcare-app-dev-patient-service \
+              --force-new-deployment \
+              --region us-east-1
+          else
+            echo "Patient ECS service not found. Skipping update."
+          fi
 
-      - name: Update Appointment Service
+      - name: Update Appointment Service (if exists)
         if: needs.build-appointment-service.result == 'success'
         run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER_NAME }} \
-            --service healthcare-app-dev-appointment-service \
-            --force-new-deployment
+          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-appointment-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
+            aws ecs update-service \
+              --cluster healthcare-app-dev-cluster \
+              --service healthcare-app-dev-appointment-service \
+              --force-new-deployment \
+              --region us-east-1
+          else
+            echo "Appointment ECS service not found. Skipping update."
+          fi
 
-      - name: Wait for services to stabilize
+      - name: Wait for services to stabilize (if found)
         run: |
-          if [[ "${{ needs.build-patient-service.result }}" == "success" ]]; then
+          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-patient-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
             aws ecs wait services-stable \
-              --cluster ${{ env.ECS_CLUSTER_NAME }} \
-              --services healthcare-app-dev-patient-service
+              --cluster healthcare-app-dev-cluster \
+              --services healthcare-app-dev-patient-service \
+              --region  us-east-1
           fi
+
+          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-appointment-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
+            aws ecs wait services-stable \
+              --cluster healthcare-app-dev-cluster \
+              --services healthcare-app-dev-appointment-service \
+              --region us-east-1
+          fi
+
+  
+
           
-          if [[ "${{ needs.build-appointment-service.result }}" == "success" ]]; then
-            aws ecs wait services-stable \
-              --cluster ${{ env.ECS_CLUSTER_NAME }} \
-              --services healthcare-app-dev-appointment-service
-          fi
