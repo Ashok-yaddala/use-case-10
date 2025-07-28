@@ -1,3 +1,4 @@
+data                   = "aws_caller_identity" "current" {}
 module "vpc" {
   source = "./modules/vpc"
   
@@ -57,8 +58,6 @@ module "cloudwatch" {
   environment     = var.environment
   ecs_cluster_name = module.ecs.cluster_name
 }
-
- data                   = "aws_caller_identity" "current" {}
 
 module "cloudtrail" {
  source                 = "./modules/cloudtrail"
