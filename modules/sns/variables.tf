@@ -12,3 +12,8 @@ variable "email_endpoint" {
   description = "Email address to subscribe to the SNS topic"
   type        = string
 }
+
+variable "enable_cloudwatch_logs" {
+    type = bool
+    default = false
+}
