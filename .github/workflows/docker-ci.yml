@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token:   write
-  contents:   write     
+  id-token: write
+  contents: write     
   pull-requests: write
 
 env:
@@ -60,6 +60,11 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR Repository Exists
+        run: |
+          aws ecr describe-repositories --repository-names healthcare-app-dev-patient-service || \
+          aws ecr create-repository --repository-name healthcare-app-dev-patient-service
+
       - name: Build, tag, and push image
         working-directory: application/patient-service
         env:
@@ -91,6 +96,11 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Ensure ECR Repository Exists
+        run: |
+          aws ecr describe-repositories --repository-names healthcare-app-dev-appointment-service || \
+          aws ecr create-repository --repository-name healthcare-app-dev-appointment-service
 
       - name: Build, tag, and push image
         working-directory: application/appointment-service
