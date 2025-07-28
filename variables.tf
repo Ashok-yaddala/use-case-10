@@ -1,38 +1,53 @@
-variable "name" {
-  description = "Environment or name prefix"
+variable "aws_region" {
+  description = "AWS region"
   type        = string
+  default     = "us-east-1"
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "dev"
+}
+
+variable "project_name" {
+  description = "Project name"
+  type        = string
+  default     = "healthcare-app"
 }
 
 variable "vpc_cidr" {
-  description = "CIDR for the VPC"
+  description = "CIDR block for VPC"
   type        = string
+  default     = "10.0.0.0/16"
 }
 
-variable "azs" {
-  description = "Availability Zones"
+variable "availability_zones" {
+  description = "List of availability zones"
   type        = list(string)
+  default     = ["us-east-1a", "us-east-1b"]
 }
 
-variable "public_subnet_cidrs" {
-  description = "CIDRs for public subnets"
-  type        = list(string)
+variable "container_cpu" {
+  description = "CPU units for containers"
+  type        = number
+  default     = 256
 }
 
-variable "private_subnet_cidrs" {
-  description = "CIDRs for private subnets"
-  type        = list(string)
+variable "container_memory" {
+  description = "Memory for containers"
+  type        = number
+  default     = 512
 }
 
-variable "appointment_image" {
-  description = "ECR image URI for appointment-service"
-  type        = string
+variable "app_port" {
+  description = "Application port"
+  type        = number
+  default     = 3000
 }
 
-variable "patient_image" {
-  description = "ECR image URI for patient-service"
-  type        = string
-}
-variable "region" {
-  description = "AWS region to deploy resources"
-  type        = string
+variable "desired_capacity" {
+  description = "Desired number of instances"
+  type        = number
+  default     = 1
 }

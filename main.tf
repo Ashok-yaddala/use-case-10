@@ -1,58 +1,75 @@
 module "vpc" {
-  source     = "../mod-vpc"
-  name       = var.name
-  cidr_block = var.vpc_cidr
-  azs        = var.azs
-  public_subnet_cidrs  = var.public_subnet_cidrs
-  private_subnet_cidrs = var.private_subnet_cidrs
-}
-
-module "sg" {
-  source = "../mod-sg"
-  name   = var.name
-  vpc_id = module.vpc.vpc_id
+  source = "./modules/vpc"
+  
+  project_name       = var.project_name
+  environment        = var.environment
+  vpc_cidr          = var.vpc_cidr
+  availability_zones = var.availability_zones
 }
 
 module "iam" {
-  source = "../mod-iam"
-  name   = var.name
+  source = "./modules/iam"
+  
+  project_name = var.project_name
+  environment  = var.environment
 }
 
 module "ecr" {
-  source = "../mod-ecr"
-  name   = var.name
+  source = "./modules/ecr"
+  
+  project_name = var.project_name
+  environment  = var.environment
 }
 
 module "alb" {
-  source            = "../mod-alb"
-  name              = var.name
-  vpc_id            = module.vpc.vpc_id
-  public_subnet_ids = module.vpc.public_subnet_ids
-  alb_sg_id         = module.sg.alb_sg_id
+  source = "./modules/alb"
+  
+  project_name    = var.project_name
+  environment     = var.environment
+  vpc_id          = module.vpc.vpc_id
+  public_subnets  = module.vpc.public_subnets
+  security_groups = [module.vpc.alb_security_group_id]
 }
 
 module "ecs" {
-  source = "../mod-ecs"
-
-  name                = var.name
-  cluster_name        = var.name
-  task_exec_role_arn  = module.iam.ecs_exec_role_arn
-  task_role_arn       = module.iam.ecs_task_role_arn
-  private_subnet_ids  = module.vpc.private_subnet_ids
-  ecs_sg_id           = module.sg.ecs_sg_id
-
-  appointment_image   = var.appointment_image
-  patient_image       = var.patient_image
-
-  appointment_target_group_arn = module.alb.appointment_tg_arn
-  patient_target_group_arn     = module.alb.patient_tg_arn
+  source = "./modules/ecs"
+  
+  project_name             = var.project_name
+  environment              = var.environment
+  vpc_id                   = module.vpc.vpc_id
+  private_subnets          = module.vpc.private_subnets
+  ecs_security_group_id    = module.vpc.ecs_security_group_id
+  task_execution_role_arn  = module.iam.ecs_task_execution_role_arn
+  task_role_arn           = module.iam.ecs_task_role_arn
+  ecr_patient_repo_url    = module.ecr.patient_service_repository_url
+  ecr_appointment_repo_url = module.ecr.appointment_service_repository_url
+  target_group_arns       = module.alb.target_group_arns
+  container_cpu           = var.container_cpu
+  container_memory        = var.container_memory
+  app_port               = var.app_port
+  desired_capacity       = var.desired_capacity
 }
 
-module "monitoring" {
-  source = "../mod-monitoring"
-  name   = var.name
+module "cloudwatch" {
+  source = "./modules/cloudwatch"
+  
+  project_name    = var.project_name
+  environment     = var.environment
+  ecs_cluster_name = module.ecs.cluster_name
 }
 
-provider "aws" {
-  region = var.region
+module "cloudtrail" {
+  source                 = "./modules/cloudtrail"
+  project_name           = var.project_name
+  s3_bucket_name         = "${var.project_name}-${var.environment}-cloudtrail-logs"
+  enable_cloudwatch_logs = true
+  log_group_name         = "/aws/cloudtrail/${var.project_name}-${var.environment}"
 }
+
+module "sns" {
+  source          = "./modules/sns"
+  project_name    = var.project_name
+  log_group_name  = "/aws/cloudtrail/${var.project_name}-${var.environment}"
+  email_endpoint  = "Ashok.y465@gmail.com" # <- Replace with your email
+}
+
