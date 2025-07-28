@@ -59,12 +59,13 @@ module "cloudwatch" {
 }
 
 module "cloudtrail" {
-  source                 = "./modules/cloudtrail"
-  project_name           = var.project_name
-  environment            = var.environment
-  enable_cloudwatch_logs = true
-  s3_testing_bucket      = "${var.project_name}-${var.environment}-cloudtrail-logs"
-  log_group_name         = "/aws/cloudtrail/${var.project_name}-${var.environment}"
+ source                 = "./modules/cloudtrail"
+ project_name           = var.project_name
+ environment            = var.environment
+ data                   = "aws_caller_identity" "current" {}
+ s3_testing_bucket      = "${var.project_name}-${var.environment}-cloudtrail-logs-${data.aws_caller_identity.current.account_id}"
+ enable_cloudwatch_logs = true
+ log_group_name         = "/aws/cloudtrail/${var.project_name}-${var.environment}"
 }
 
 module "sns" {

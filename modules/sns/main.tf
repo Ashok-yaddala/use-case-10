@@ -9,15 +9,15 @@ resource "aws_sns_topic_subscription" "email" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "trail_delete_filter" {
-  name           = "DeleteTrailFilter"
-  log_group_name = var.log_group_name
-  pattern        = "{ $.eventName = \"DeleteTrail\" }"
-
-  metric_transformation {
-    name      = "DeleteTrailCount"
-    namespace = "CloudTrailMetrics"
-    value     = "1"
-  }
+ count = var.enable_cloudwatch_logs ? 1 : 0
+ name           = "trail_delete_events"
+ log_group_name = var.log_group_name != "" ? var.log_group_name : "/aws/cloudtrail/${var.project_name}"
+ pattern = "{ ($.eventName = DeleteTrail) }"
+ metric_transformation {
+   name      = "DeleteTrailCount"
+   namespace = "CloudTrailMetrics"
+   value     = "1"
+ }
 }
 
 resource "aws_cloudwatch_metric_alarm" "trail_delete_alarm" {
