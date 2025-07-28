@@ -116,63 +116,61 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
   deploy:
-    name: Deploy to ECS
-    runs-on: ubuntu-latest
-    needs: [build-patient-service, build-appointment-service]
-    if: always() && (needs.build-patient-service.result == 'success' || needs.build-appointment-service.result == 'success') && github.ref == 'refs/heads/main'
-    
-    environment:
-      name: production
-    
-    steps:
-      - name: Configure AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Update Patient Service (if exists)
-        if: needs.build-patient-service.result == 'success'
-        run: |
-          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-patient-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
-            aws ecs update-service \
-              --cluster healthcare-app-dev-cluster \
-              --service healthcare-app-dev-patient-service \
-              --force-new-deployment \
-              --region us-east-1
-          else
-            echo "Patient ECS service not found. Skipping update."
-          fi
-
-      - name: Update Appointment Service (if exists)
-        if: needs.build-appointment-service.result == 'success'
-        run: |
-          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-appointment-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
-            aws ecs update-service \
-              --cluster healthcare-app-dev-cluster \
-              --service healthcare-app-dev-appointment-service \
-              --force-new-deployment \
-              --region us-east-1
-          else
-            echo "Appointment ECS service not found. Skipping update."
-          fi
-
-      - name: Wait for services to stabilize (if found)
-        run: |
-          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-patient-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
-            aws ecs wait services-stable \
-              --cluster healthcare-app-dev-cluster \
-              --services healthcare-app-dev-patient-service \
-              --region  us-east-1
-          fi
-
-          if aws ecs describe-services --cluster healthcare-app-dev-cluster --services healthcare-app-dev-appointment-service --region us-east-1 | grep '"status": "ACTIVE"' > /dev/null; then
-            aws ecs wait services-stable \
-              --cluster healthcare-app-dev-cluster \
-              --services healthcare-app-dev-appointment-service \
-              --region us-east-1
-          fi
-
-  
-
-          
+   name: Deploy to ECS
+   runs-on: ubuntu-latest
+   needs: [build-patient-service, build-appointment-service]
+   if: always() && (needs.build-patient-service.result == 'success' || needs.build-appointment-service.result == 'success') && github.ref == 'refs/heads/main'
+   environment:
+     name: production
+   steps:
+     - name: Configure AWS credentials using OIDC
+       uses: aws-actions/configure-aws-credentials@v4
+       with:
+         role-to-assume: ${{ env.AWS_ROLE_ARN }}
+         aws-region: ${{ env.AWS_REGION }}
+     - name: Ensure ECS Cluster Exists
+       run: |
+         if ! aws ecs describe-clusters --clusters $ECS_CLUSTER_NAME --region $AWS_REGION | grep -q '"status": "ACTIVE"'; then
+           echo "ECS cluster not found. Creating ECS cluster: $ECS_CLUSTER_NAME"
+           aws ecs create-cluster --cluster-name $ECS_CLUSTER_NAME --region $AWS_REGION
+         else
+           echo "ECS cluster exists: $ECS_CLUSTER_NAME"
+         fi
+     - name: Update Patient Service (if exists)
+       if: needs.build-patient-service.result == 'success'
+       run: |
+         if aws ecs describe-services --cluster $ECS_CLUSTER_NAME --services healthcare-app-dev-patient-service --region $AWS_REGION | grep '"status": "ACTIVE"' > /dev/null; then
+           aws ecs update-service \
+             --cluster $ECS_CLUSTER_NAME \
+             --service healthcare-app-dev-patient-service \
+             --force-new-deployment \
+             --region $AWS_REGION
+         else
+           echo "Patient ECS service not found. Skipping update."
+         fi
+     - name: Update Appointment Service (if exists)
+       if: needs.build-appointment-service.result == 'success'
+       run: |
+         if aws ecs describe-services --cluster $ECS_CLUSTER_NAME --services healthcare-app-dev-appointment-service --region $AWS_REGION | grep '"status": "ACTIVE"' > /dev/null; then
+           aws ecs update-service \
+             --cluster $ECS_CLUSTER_NAME \
+             --service healthcare-app-dev-appointment-service \
+             --force-new-deployment \
+             --region $AWS_REGION
+         else
+           echo "Appointment ECS service not found. Skipping update."
+         fi
+     - name: Wait for services to stabilize (if found)
+       run: |
+         if aws ecs describe-services --cluster $ECS_CLUSTER_NAME --services healthcare-app-dev-patient-service --region $AWS_REGION | grep '"status": "ACTIVE"' > /dev/null; then
+           aws ecs wait services-stable \
+             --cluster $ECS_CLUSTER_NAME \
+             --services healthcare-app-dev-patient-service \
+             --region $AWS_REGION
+         fi
+         if aws ecs describe-services --cluster $ECS_CLUSTER_NAME --services healthcare-app-dev-appointment-service --region $AWS_REGION | grep '"status": "ACTIVE"' > /dev/null; then
+           aws ecs wait services-stable \
+             --cluster $ECS_CLUSTER_NAME \
+             --services healthcare-app-dev-appointment-service \
+             --region $AWS_REGION
+         fi
