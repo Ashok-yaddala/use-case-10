@@ -1,3 +1,4 @@
+data "aws_caller_identity" "current" {}
 resource "aws_s3_bucket" "cloudtrail_logs" {
  bucket = var.s3_testing_bucket
  tags = {
@@ -63,16 +64,6 @@ resource "aws_iam_role_policy" "cloudtrail_logging_policy" {
    ]
  })
 }
-resource "aws_cloudtrail" "trail" {
- name                          = "${var.project_name}-cloudtrail"
- s3_bucket_name                = aws_s3_bucket.cloudtrail_logs.id
- include_global_service_events = true
- is_multi_region_trail         = true
- enable_logging                = true
- cloud_watch_logs_group_arn = var.enable_cloudwatch_logs ? "${aws_cloudwatch_log_group.trail_log_group[0].arn}:*" : null
- cloud_watch_logs_role_arn  = var.enable_cloudwatch_logs ? aws_iam_role.cloudtrail_role.arn : null
-}
-data "aws_caller_identity" "current" {}
 resource "aws_s3_bucket_policy" "cloudtrail_logs_policy" {
  bucket = aws_s3_bucket.cloudtrail_logs.id
  policy = jsonencode({
@@ -103,5 +94,4 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs_policy" {
      }
    ]
  })
- depends_on = [aws_s3_bucket.cloudtrail_logs]
 }
