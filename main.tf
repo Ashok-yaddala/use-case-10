@@ -69,6 +69,9 @@ module "cloudtrail" {
 module "sns" {
   source          = "./modules/sns"
   project_name    = var.project_name
+  environment     = var.environment
+  enable_cloudwatch_logs= true
+  s3_testing_bucket = "${var.project_name}-${var.environment}-cloudtrail-logs"
   log_group_name  = "/aws/cloudtrail/${var.project_name}-${var.environment}"
   email_endpoint  = "Ashok.y465@gmail.com" # <- Replace with your email
 }
