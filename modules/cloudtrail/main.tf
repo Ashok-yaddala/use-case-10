@@ -1,22 +1,22 @@
-resource "aws_s3_bucket" "cloudtrail_logs" {
-  bucket = var.s3_bucket_name
+resource "aws_s3_testing_bucket" "cloudtrail_logs" {
+  bucket = var.s3_testing_bucket
 
   tags = {
-    Name        = var.s3_bucket_name
+    Name        = var.s3_testing_bucket
     Environment = var.project_name
   }
 }
 
-resource "aws_s3_bucket_versioning" "cloudtrail_versioning" {
-  bucket = aws_s3_bucket.cloudtrail_logs.id
+resource "aws_s3_testing_bucket_versioning" "cloudtrail_versioning" {
+  bucket = aws_s3_testing_bucket.cloudtrail_logs.id
 
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "trail_logs_encryption" {
-  bucket = aws_s3_bucket.cloudtrail_logs.bucket
+resource "aws_s3_testing_bucket_server_side_encryption_configuration" "trail_logs_encryption" {
+  bucket = aws_s3_testing_bucket.cloudtrail_logs.bucket
 
   rule {
     apply_server_side_encryption_by_default {
@@ -25,8 +25,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "trail_logs_encryp
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "trail_logs_public_block" {
-  bucket                  = aws_s3_bucket.cloudtrail_logs.id
+resource "aws_s3_testing_bucket_public_access_block" "trail_logs_public_block" {
+  bucket                  = aws_s3_testing_bucket.cloudtrail_logs.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -78,7 +78,7 @@ resource "aws_iam_role_policy" "cloudtrail_logging_policy" {
 
 resource "aws_cloudtrail" "trail" {
   name                          = "${var.project_name}-cloudtrail"
-  s3_bucket_name                = aws_s3_bucket.cloudtrail_logs.id
+  s3_bucket_name                = aws_s3_testing_bucket.cloudtrail_logs.id
   include_global_service_events = true
   is_multi_region_trail         = true
   enable_logging                = true
@@ -89,8 +89,8 @@ resource "aws_cloudtrail" "trail" {
 
 data "aws_caller_identity" "current" {}
 
-resource "aws_s3_bucket_policy" "cloudtrail_logs_policy" {
-  bucket = aws_s3_bucket.cloudtrail_logs.id
+resource "aws_s3_testing_bucket_policy" "cloudtrail_logs_policy" {
+  bucket = aws_s3_testing_bucket.cloudtrail_logs.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -102,7 +102,7 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs_policy" {
           Service = "cloudtrail.amazonaws.com"
         },
         Action   = "s3:GetBucketAcl",
-        Resource = aws_s3_bucket.cloudtrail_logs.arn
+        Resource = aaws_s3_testing_bucket.cloudtrail_logs.arn
       },
       {
         Sid       = "AWSCloudTrailWrite",
@@ -111,7 +111,7 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs_policy" {
           Service = "cloudtrail.amazonaws.com"
         },
         Action    = "s3:PutObject",
-        Resource  = "${aws_s3_bucket.cloudtrail_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*",
+        Resource  = "${aws_s3_testing_bucket.cloudtrail_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*",
         Condition = {
           StringEquals = {
             "s3:x-amz-acl" = "bucket-owner-full-control"
@@ -121,5 +121,5 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs_policy" {
     ]
   })
 
-  depends_on = [aws_s3_bucket.cloudtrail_logs]
+  depends_on = [aws_s3_testing_bucket.cloudtrail_logs]
 }

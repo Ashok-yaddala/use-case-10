@@ -3,7 +3,7 @@ variable "project_name" {
   type        = string
 }
 
-variable "s3_bucket_name" {
+variable "s3_testing_bucket" {
   description = "S3 bucket to store CloudTrail logs"
   type        = string
 }

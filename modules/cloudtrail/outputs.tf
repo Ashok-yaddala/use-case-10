@@ -3,7 +3,7 @@ output "cloudtrail_name" {
 }
 
 output "cloudtrail_s3_bucket" {
-  value = aws_s3_bucket.cloudtrail_logs.id
+  value = aws_s3_testing_bucket.cloudtrail_logs.id
 }
 
 output "cloudtrail_log_group" {
