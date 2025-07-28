@@ -67,8 +67,8 @@ module "cloudtrail" {
   log_group_name         = "/aws/cloudtrail/${var.project_name}-${var.environment}"
 }
 
-module "sns_alert" {
-  source          = "./modules/sns_alert"
+module "sns" {
+  source          = "./modules/sns"
   project_name    = var.project_name
   log_group_name  = "/aws/cloudtrail/${var.project_name}-${var.environment}"
   email_endpoint  = "Ashok.y465@gmail.com"
