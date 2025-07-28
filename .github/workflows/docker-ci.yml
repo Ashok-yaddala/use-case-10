@@ -17,6 +17,7 @@ permissions:
 env:
   AWS_REGION: us-east-1
   AWS_ROLE_ARN: arn:aws:iam::136102212278:role/Githubactions-OIDC
+  ECS_CLUSTER_NAME: healthcare-app-dev-cluster
 
 jobs:
   detect-changes:
@@ -130,11 +131,16 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Ensure ECS Cluster Exists
+        run: |
+          aws ecs describe-clusters --clusters ${{ env.ECS_CLUSTER_NAME }} || \
+          aws ecs create-cluster --cluster-name ${{ env.ECS_CLUSTER_NAME }}
+
       - name: Update Patient Service
         if: needs.build-patient-service.result == 'success'
         run: |
           aws ecs update-service \
-            --cluster healthcare-app-dev-cluster \
+            --cluster ${{ env.ECS_CLUSTER_NAME }} \
             --service healthcare-app-dev-patient-service \
             --force-new-deployment
 
@@ -142,7 +148,7 @@ jobs:
         if: needs.build-appointment-service.result == 'success'
         run: |
           aws ecs update-service \
-            --cluster healthcare-app-dev-cluster \
+            --cluster ${{ env.ECS_CLUSTER_NAME }} \
             --service healthcare-app-dev-appointment-service \
             --force-new-deployment
 
@@ -150,12 +156,12 @@ jobs:
         run: |
           if [[ "${{ needs.build-patient-service.result }}" == "success" ]]; then
             aws ecs wait services-stable \
-              --cluster healthcare-app-dev-cluster \
+              --cluster ${{ env.ECS_CLUSTER_NAME }} \
               --services healthcare-app-dev-patient-service
           fi
           
           if [[ "${{ needs.build-appointment-service.result }}" == "success" ]]; then
             aws ecs wait services-stable \
-              --cluster healthcare-app-dev-cluster \
+              --cluster ${{ env.ECS_CLUSTER_NAME }} \
               --services healthcare-app-dev-appointment-service
           fi
